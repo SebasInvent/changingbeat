@@ -1,0 +1,58 @@
+﻿# Dependencias
+node_modules/
+package-lock.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Base de datos
+DataBase/
+*.mdf
+*.ldf
+*.MDF
+*.LDF
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de configuración local
+config.local.js
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Build
+dist/
+build/
+
+# Archivos sensibles
+*.key
+*.pem
+*.cert
+
+# Archivos antiguos
+old/
+*.old
+*.backup
+
+# Reportes temporales
+network-diagnosis-report.txt
