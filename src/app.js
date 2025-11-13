@@ -38,8 +38,9 @@ const createApp = () => {
   // ===== BODY PARSING =====
   
   // JSON y URL encoded con límites
-  app.use(bodyParser.json({ limit: '10mb' }));
-  app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+  // Límite aumentado a 50mb para soportar imágenes Base64 de verificación biométrica
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
   // Compresión de respuestas
   app.use(compression());

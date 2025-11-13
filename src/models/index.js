@@ -4,8 +4,12 @@
 
 const User = require('./User.model');
 const Record = require('./Record.model');
+const BiometricRegistration = require('./BiometricRegistration');
+const Tablet = require('./Tablet.model');
 
 module.exports = {
   User,
-  Record
+  Record,
+  BiometricRegistration,
+  Tablet
 };
