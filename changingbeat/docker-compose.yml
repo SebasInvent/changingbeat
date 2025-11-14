@@ -1,18 +1,83 @@
 version: '3.8'
 
 services:
+  # Base de datos MongoDB
   mongodb:
     image: mongo:latest
     container_name: access-control-db
     restart: always
-    ports:
-      - "27017:27017"
+    # No exponemos el puerto públicamente por seguridad
+    # Solo accesible dentro de la red de Docker
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: examplepassword
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-examplepassword}
     volumes:
       - mongo-data:/data/db
+    networks:
+      - access-control-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Servidor Node.js
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: access-control-app
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      MONGODB_URI: mongodb://root:${MONGO_PASSWORD:-examplepassword}@mongodb:27017/autoregistro?authSource=admin
+      MONGODB_POOL_SIZE: 10
+      MONGODB_TIMEOUT: 5000
+      JWT_SECRET: ${JWT_SECRET:-your_super_secret_key_change_this_in_production}
+      JWT_EXPIRATION: 24h
+      JWT_REFRESH_EXPIRATION: 7d
+      BCRYPT_ROUNDS: 10
+      SERIAL_PORT: ${SERIAL_PORT:-COM8}
+      SERIAL_BAUDRATE: 115200
+      TERMINAL_IPS: ${TERMINAL_IPS:-192.168.1.201,192.168.1.202,192.168.1.208}
+      CALLBACK_BASE_URL: ${CALLBACK_BASE_URL:-https://access-control.eukahack.com}
+      TERMINAL_BASE_URL: ${TERMINAL_BASE_URL:-http://192.168.1.201:8090}
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      LOG_LEVEL: info
+      LOG_FILE: logs/combined.log
+      LOG_ERROR_FILE: logs/error.log
+      MAX_FILE_SIZE: 5242880
+      UPLOAD_DIR: uploads
+      TIMEZONE_OFFSET: -5
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - access-control-network
+    labels:
+      # Labels para Traefik (reverse proxy de Eukahack)
+      - "traefik.enable=true"
+      - "traefik.http.routers.access-control.rule=Host(`access-control.eukahack.com`)"
+      - "traefik.http.routers.access-control.entrypoints=websecure"
+      - "traefik.http.routers.access-control.tls=true"
+      - "traefik.http.routers.access-control.tls.certresolver=letsencrypt"
+      - "traefik.http.services.access-control.loadbalancer.server.port=3000"
+      - "traefik.docker.network=access-control-network"
 
 volumes:
   mongo-data:
     driver: local
+
+networks:
+  access-control-network:
+    driver: bridge
+    external: false
