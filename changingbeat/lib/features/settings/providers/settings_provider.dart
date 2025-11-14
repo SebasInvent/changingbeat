@@ -11,6 +11,7 @@ class SettingsProvider with ChangeNotifier {
       'face_detection_sensitivity';
   static const String _keyCameraResolution = 'camera_resolution';
   static const String _keyDebugMode = 'debug_mode';
+  static const String _keyLivenessDetection = 'liveness_detection';
 
   // Valores por defecto
   static const String _defaultTabletId = 'TAB-001';
@@ -20,6 +21,7 @@ class SettingsProvider with ChangeNotifier {
   static const double _defaultSensitivity = 80.0;
   static const String _defaultResolution = 'high';
   static const bool _defaultDebugMode = false;
+  static const bool _defaultLivenessDetection = true;
 
   // Configuración actual
   String _tabletId = _defaultTabletId;
@@ -28,6 +30,7 @@ class SettingsProvider with ChangeNotifier {
   double _faceDetectionSensitivity = _defaultSensitivity;
   String _cameraResolution = _defaultResolution;
   bool _debugMode = _defaultDebugMode;
+  bool _livenessDetection = _defaultLivenessDetection;
 
   bool _isLoading = false;
 
