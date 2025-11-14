@@ -22,6 +22,7 @@ class BiometricCaptureProvider with ChangeNotifier {
   DateTime? _birthDate;
   String? _gender;
   String? _nationality;
+  bool _livenessVerified = false;
 
   // Cámara
   CameraController? _cameraController;
@@ -37,6 +38,7 @@ class BiometricCaptureProvider with ChangeNotifier {
   bool get isCameraInitialized => _isCameraInitialized;
   bool get hasDocumentImage => _documentImage != null;
   bool get hasFaceImage => _faceImage != null;
+  bool get livenessVerified => _livenessVerified;
 
   /// Inicializar cámara
   Future<void> initializeCamera({bool useFrontCamera = false}) async {
@@ -108,6 +110,12 @@ class BiometricCaptureProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Establecer si pasó liveness detection
+  void setLivenessVerified(bool verified) {
+    _livenessVerified = verified;
+    notifyListeners();
+  }
+
   /// Establecer datos del documento
   void setDocumentData({
     required String documentNumber,
@@ -171,6 +179,7 @@ class BiometricCaptureProvider with ChangeNotifier {
           'captureDate': DateTime.now().toIso8601String(),
           'documentImageSize': _documentImage!.lengthSync(),
           'faceImageSize': _faceImage!.lengthSync(),
+          'livenessVerified': _livenessVerified,
         },
       );
 
