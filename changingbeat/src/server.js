@@ -11,14 +11,20 @@ const { serialService } = require('./services');
  */
 const startServer = async () => {
   try {
+    console.log('[DEBUG] startServer() iniciado');
+    
     // Banner
     logger.info('=====================================');
     logger.info('Sistema de Control de Acceso v2.0');
     logger.info('=====================================');
 
+    console.log('[DEBUG] Banner mostrado, iniciando conexión a MongoDB...');
+    
     // Conectar a MongoDB
     logger.info('Conectando a MongoDB...');
+    console.log('[DEBUG] Antes de database.connect()');
     await database.connect();
+    console.log('[DEBUG] Después de database.connect()');
 
     // Crear app Express
     const app = createApp();

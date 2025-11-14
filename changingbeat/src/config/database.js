@@ -15,15 +15,21 @@ class Database {
    */
   async connect() {
     try {
+      console.log('[DEBUG] Iniciando conexión a MongoDB...');
+      console.log('[DEBUG] URI:', config.database.uri);
+      console.log('[DEBUG] Opciones:', JSON.stringify(config.database.options));
+      
       // Configurar mongoose
       mongoose.set('strictQuery', false);
 
+      console.log('[DEBUG] Llamando a mongoose.connect()...');
       // Conectar
       this.connection = await mongoose.connect(
         config.database.uri,
         config.database.options
       );
 
+      console.log('[DEBUG] mongoose.connect() completado');
       logger.info('✅ Conectado a MongoDB exitosamente', {
         host: this.connection.connection.host,
         database: this.connection.connection.name
@@ -34,6 +40,7 @@ class Database {
 
       return this.connection;
     } catch (error) {
+      console.error('[DEBUG] Error en catch:', error);
       logger.error('❌ Error conectando a MongoDB:', error);
       throw error;
     }
