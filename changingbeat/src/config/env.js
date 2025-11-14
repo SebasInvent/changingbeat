@@ -39,7 +39,8 @@ const config = {
 
   // Serial Port
   serialPort: {
-    path: process.env.SERIAL_PORT || 'COM8',
+    enabled: process.env.SERIAL_ENABLED === 'true',
+    path: process.env.SERIAL_PORT || '',
     baudRate: parseInt(process.env.SERIAL_BAUDRATE) || 115200
   },
 

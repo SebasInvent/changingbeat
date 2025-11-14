@@ -27,18 +27,24 @@ const startServer = async () => {
     console.log('[DEBUG] Después de database.connect()');
 
     // Crear app Express
+    console.log('[DEBUG] Creando instancia de Express...');
     const app = createApp();
+    console.log('[DEBUG] App Express creada');
 
     // Crear servidor HTTP
+    console.log('[DEBUG] Creando servidor HTTP...');
     const server = http.createServer(app);
+    console.log('[DEBUG] Servidor HTTP creado');
 
     // Inicializar WebSocket
+    console.log('[DEBUG] Inicializando WebSocket...');
     const socketHandler = require('./websocket/socket.handler');
     socketHandler.initialize(server);
     logger.info('WebSocket inicializado');
+    console.log('[DEBUG] WebSocket inicializado');
 
-    // Inicializar puerto serial (si está configurado)
-    if (config.serialPort.path) {
+    // Inicializar puerto serial solo si está habilitado
+    if (config.serialPort.enabled && config.serialPort.path) {
       try {
         logger.info('Inicializando puerto serial...');
         await serialService.initialize();
@@ -52,10 +58,14 @@ const startServer = async () => {
         logger.warn('No se pudo inicializar puerto serial:', error.message);
         logger.warn('El sistema continuará sin lectura de cédulas');
       }
+    } else {
+      logger.info('Puerto serial deshabilitado para este despliegue');
     }
 
     // Iniciar servidor
+    console.log('[DEBUG] Iniciando server.listen...');
     server.listen(config.server.port, config.server.host, () => {
+      console.log('[DEBUG] Callback server.listen ejecutado');
       logger.info(`🚀 Servidor corriendo en http://${config.server.host}:${config.server.port}`);
       logger.info(`📚 Documentación API: http://${config.server.host}:${config.server.port}/api-docs`);
       logger.info(`💚 Health check: http://${config.server.host}:${config.server.port}/api/v1/health`);
