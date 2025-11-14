@@ -18,7 +18,7 @@ services:
 
   # Servidor Node.js
   app:
-    image: ${DOCKER_REGISTRY:-ghcr.io/sebasinvent}/changingbeat:v1.0.2
+    image: ${DOCKER_REGISTRY:-ghcr.io/sebasinvent}/changingbeat:v1.0.4
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -30,7 +30,8 @@ services:
       JWT_EXPIRATION: 24h
       JWT_REFRESH_EXPIRATION: 7d
       BCRYPT_ROUNDS: 10
-      SERIAL_PORT: ${SERIAL_PORT:-COM8}
+      SERIAL_ENABLED: "false"
+      SERIAL_PORT: ${SERIAL_PORT:-}
       SERIAL_BAUDRATE: 115200
       TERMINAL_IPS: ${TERMINAL_IPS:-192.168.1.201,192.168.1.202,192.168.1.208}
       CALLBACK_BASE_URL: ${CALLBACK_BASE_URL:-https://access-control.eukahack.com}
@@ -49,6 +50,7 @@ services:
       - app-logs:/app/logs
     networks:
       - access-control-network
+      - inventnet
     deploy:
       replicas: 1
       restart_policy:
@@ -65,6 +67,9 @@ networks:
   access-control-network:
     driver: overlay
     attachable: true
+  inventnet:
+    external: true
+    name: InventNet
 
 volumes:
   mongo-data:
