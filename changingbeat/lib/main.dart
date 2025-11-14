@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
+import 'core/widgets/auth_wrapper.dart';
 import 'features/auth/providers/auth_provider.dart';
 
 void main() async {
@@ -28,12 +29,14 @@ class BiometricVerificationApp extends StatelessWidget {
           create: (_) => AuthProvider()..initialize(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Verificación Biométrica',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        onGenerateRoute: AppRouter.generateRoute,
-        initialRoute: AppRoutes.splash,
+      child: AuthWrapper(
+        child: MaterialApp(
+          title: 'Verificación Biométrica',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          onGenerateRoute: AppRouter.generateRoute,
+          initialRoute: AppRoutes.splash,
+        ),
       ),
     );
   }

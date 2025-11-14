@@ -11,6 +11,9 @@ class ApiClient {
   final Logger _logger = Logger();
   String? _authToken;
 
+  /// Callback para manejar errores de autenticación (401/403)
+  void Function()? onAuthError;
+
   ApiClient({String? baseUrl}) {
     _dio = Dio(
       BaseOptions(
@@ -59,6 +62,14 @@ class ApiClient {
           if (error.response?.data != null) {
             _logger.e('Error data: ${error.response?.data}');
           }
+
+          // Detectar errores de autenticación (token expirado o inválido)
+          final statusCode = error.response?.statusCode;
+          if (statusCode == 401 || statusCode == 403) {
+            _logger.w('Authentication error detected - triggering auto-logout');
+            onAuthError?.call();
+          }
+
           return handler.next(error);
         },
       ),

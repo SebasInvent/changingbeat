@@ -28,6 +28,12 @@ class AuthProvider with ChangeNotifier {
 
   /// Inicializar y verificar si hay sesión guardada
   Future<void> initialize() async {
+    // Configurar callback de auto-logout para errores 401/403
+    _apiService.setAuthErrorCallback(() {
+      debugPrint('Auto-logout triggered by API error');
+      _handleAutoLogout();
+    });
+
     _isLoading = true;
     notifyListeners();
 
@@ -155,6 +161,28 @@ class AuthProvider with ChangeNotifier {
   /// Limpiar mensaje de error
   void clearError() {
     _errorMessage = null;
+    notifyListeners();
+  }
+
+  /// Manejar auto-logout cuando el token expira o es inválido
+  void _handleAutoLogout() {
+    debugPrint('Handling auto-logout - token expired or invalid');
+
+    // Limpiar datos de autenticación de forma síncrona
+    _authToken = null;
+    _currentUser = null;
+    _isAuthenticated = false;
+    _errorMessage =
+        'Su sesión ha expirado. Por favor, inicie sesión nuevamente.';
+
+    // Limpiar datos guardados de forma asíncrona
+    _clearAuthData().then((_) {
+      debugPrint('Auth data cleared after auto-logout');
+    }).catchError((e) {
+      debugPrint('Error clearing auth data: $e');
+    });
+
+    // Notificar a los listeners para actualizar la UI
     notifyListeners();
   }
 }

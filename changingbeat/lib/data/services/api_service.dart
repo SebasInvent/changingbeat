@@ -19,6 +19,11 @@ class ApiService {
   /// Obtener instancia del API Client
   ApiClient get client => _client;
 
+  /// Configurar callback para errores de autenticación
+  void setAuthErrorCallback(void Function() callback) {
+    _client.onAuthError = callback;
+  }
+
   // ==================== MÉTODOS DE AUTENTICACIÓN ====================
 
   /// Login de usuario
