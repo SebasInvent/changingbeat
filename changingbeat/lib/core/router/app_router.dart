@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../features/onboarding/presentation/screens/splash_screen.dart';
+import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
