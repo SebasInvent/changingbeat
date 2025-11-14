@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../auth/providers/auth_provider.dart';
+import '../../providers/dashboard_provider.dart';
 
 /// Pantalla principal del dashboard
 class DashboardScreen extends StatefulWidget {
@@ -14,6 +17,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    // Cargar datos del dashboard al iniciar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DashboardProvider>().loadDashboardData();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -24,6 +36,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: () {
               Navigator.of(context).pushNamed(AppRoutes.settings);
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar Sesión',
+            onPressed: () => _handleLogout(context),
           ),
         ],
       ),
@@ -65,92 +82,153 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHomeTab() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Tarjeta de bienvenida
-            Card(
+    return Consumer2<AuthProvider, DashboardProvider>(
+      builder: (context, authProvider, dashboardProvider, child) {
+        final user = authProvider.currentUser;
+
+        return RefreshIndicator(
+          onRefresh: () => dashboardProvider.refresh(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.fingerprint,
-                      size: 80,
-                      color: AppTheme.primaryColor,
+                    // Tarjeta de bienvenida con usuario
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 40,
+                              backgroundColor: AppTheme.primaryColor,
+                              child: Text(
+                                user?.username.substring(0, 1).toUpperCase() ??
+                                    'U',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Bienvenido, ${user?.username ?? "Usuario"}',
+                              style: Theme.of(context).textTheme.titleLarge,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Rol: ${user?.role ?? "Operador"}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: AppTheme.primaryColor,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Sistema de Verificación Biométrica',
+                              style: Theme.of(context).textTheme.bodySmall,
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
+
+                    const SizedBox(height: 24),
+
+                    // Indicador de carga o error
+                    if (dashboardProvider.isLoading)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (dashboardProvider.errorMessage != null)
+                      Card(
+                        color: AppTheme.errorColor.withOpacity(0.1),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error,
+                                  color: AppTheme.errorColor),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  dashboardProvider.errorMessage!,
+                                  style: const TextStyle(
+                                      color: AppTheme.errorColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    // Estadísticas rápidas
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.person_add,
+                            title: 'Registros Hoy',
+                            value: '${dashboardProvider.todayRecords}',
+                            color: AppTheme.accentColor,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.check_circle,
+                            title: 'Exitosos',
+                            value: '${dashboardProvider.successfulRecords}',
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Botón principal de captura
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(AppRoutes.capture);
+                      },
+                      icon: const Icon(Icons.camera_alt, size: 28),
+                      label: const Text('Iniciar Captura Biométrica'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                      ),
+                    ),
+
                     const SizedBox(height: 16),
-                    Text(
-                      'Sistema de Verificación Biométrica',
-                      style: Theme.of(context).textTheme.titleLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Listo para registrar y verificar identidades',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
+
+                    // Botón secundario de registros
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(AppRoutes.records);
+                      },
+                      icon: const Icon(Icons.history),
+                      label: const Text('Ver Historial de Registros'),
                     ),
                   ],
                 ),
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Estadísticas rápidas
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.person_add,
-                    title: 'Registros Hoy',
-                    value: '0',
-                    color: AppTheme.accentColor,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    icon: Icons.check_circle,
-                    title: 'Verificaciones',
-                    value: '0',
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Botón principal de captura
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pushNamed(AppRoutes.capture);
-              },
-              icon: const Icon(Icons.camera_alt, size: 28),
-              label: const Text('Iniciar Captura Biométrica'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Botón secundario de registros
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pushNamed(AppRoutes.records);
-              },
-              icon: const Icon(Icons.history),
-              label: const Text('Ver Historial de Registros'),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -239,5 +317,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
+  }
+
+  /// Manejar logout
+  Future<void> _handleLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar Sesión'),
+        content: const Text('¿Está seguro que desea cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+            ),
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await context.read<AuthProvider>().logout();
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.login,
+          (route) => false,
+        );
+      }
+    }
   }
 }
