@@ -8,6 +8,7 @@ import 'features/auth/providers/auth_provider.dart';
 import 'features/dashboard/providers/dashboard_provider.dart';
 import 'features/capture/providers/biometric_capture_provider.dart';
 import 'features/records/providers/records_provider.dart';
+import 'features/settings/providers/settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,9 @@ class BiometricVerificationApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider()..initialize(),
+        ),
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..initialize(),
         ),
