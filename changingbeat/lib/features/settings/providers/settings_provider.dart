@@ -41,6 +41,7 @@ class SettingsProvider with ChangeNotifier {
   double get faceDetectionSensitivity => _faceDetectionSensitivity;
   String get cameraResolution => _cameraResolution;
   bool get debugMode => _debugMode;
+  bool get livenessDetection => _livenessDetection;
   bool get isLoading => _isLoading;
 
   // Información de la app
@@ -64,8 +65,11 @@ class SettingsProvider with ChangeNotifier {
       _cameraResolution =
           prefs.getString(_keyCameraResolution) ?? _defaultResolution;
       _debugMode = prefs.getBool(_keyDebugMode) ?? _defaultDebugMode;
+      _livenessDetection =
+          prefs.getBool(_keyLivenessDetection) ?? _defaultLivenessDetection;
 
-      debugPrint('Settings loaded: TabletID=$_tabletId, ServerURL=$_serverUrl');
+      debugPrint(
+          'Settings loaded: TabletID=$_tabletId, ServerURL=$_serverUrl, Liveness=$_livenessDetection');
     } catch (e) {
       debugPrint('Error loading settings: $e');
     } finally {
@@ -142,6 +146,15 @@ class SettingsProvider with ChangeNotifier {
     await prefs.setBool(_keyDebugMode, enabled);
   }
 
+  /// Establecer liveness detection
+  Future<void> setLivenessDetection(bool enabled) async {
+    _livenessDetection = enabled;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyLivenessDetection, enabled);
+  }
+
   /// Restablecer a valores por defecto
   Future<void> resetToDefaults() async {
     _tabletId = _defaultTabletId;
@@ -150,6 +163,7 @@ class SettingsProvider with ChangeNotifier {
     _faceDetectionSensitivity = _defaultSensitivity;
     _cameraResolution = _defaultResolution;
     _debugMode = _defaultDebugMode;
+    _livenessDetection = _defaultLivenessDetection;
 
     notifyListeners();
 
@@ -172,6 +186,7 @@ class SettingsProvider with ChangeNotifier {
       'faceDetectionSensitivity': _faceDetectionSensitivity,
       'cameraResolution': _cameraResolution,
       'debugMode': _debugMode,
+      'livenessDetection': _livenessDetection,
     };
   }
 
@@ -194,6 +209,9 @@ class SettingsProvider with ChangeNotifier {
     }
     if (settings.containsKey('debugMode')) {
       await setDebugMode(settings['debugMode']);
+    }
+    if (settings.containsKey('livenessDetection')) {
+      await setLivenessDetection(settings['livenessDetection']);
     }
   }
 }

@@ -35,6 +35,7 @@ class SettingsScreen extends StatelessWidget {
               // Sección: Captura
               _buildSectionHeader('Captura Biométrica'),
               _buildAutoCaptureToggle(settings),
+              _buildLivenessDetectionToggle(settings),
               _buildSensitivitySlider(settings),
               _buildCameraResolutionTile(context, settings),
               const Divider(),
@@ -109,6 +110,17 @@ class SettingsScreen extends StatelessWidget {
           const Text('Capturar automáticamente cuando la calidad sea óptima'),
       value: settings.autoCapture,
       onChanged: (value) => settings.setAutoCapture(value),
+    );
+  }
+
+  Widget _buildLivenessDetectionToggle(SettingsProvider settings) {
+    return SwitchListTile(
+      secondary: const Icon(Icons.verified_user, color: AppTheme.accentColor),
+      title: const Text('Liveness Detection'),
+      subtitle:
+          const Text('Verificar que sea una persona real (anti-spoofing)'),
+      value: settings.livenessDetection,
+      onChanged: (value) => settings.setLivenessDetection(value),
     );
   }
 
