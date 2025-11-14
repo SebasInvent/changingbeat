@@ -4,32 +4,19 @@ services:
   # Base de datos MongoDB
   mongodb:
     image: mongo:latest
-    container_name: access-control-db
-    restart: always
-    # No exponemos el puerto públicamente por seguridad
-    # Solo accesible dentro de la red de Docker
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-examplepassword}
     volumes:
       - mongo-data:/data/db
-    networks:
-      - access-control-network
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
 
   # Servidor Node.js
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: access-control-app
-    restart: always
-    expose:
-      - "3000"
+    image: ${DOCKER_REGISTRY:-ghcr.io/sebasinvent}/changingbeat:latest
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -56,27 +43,21 @@ services:
       UPLOAD_DIR: uploads
       TIMEZONE_OFFSET: -5
     volumes:
-      - ./uploads:/app/uploads
-      - ./logs:/app/logs
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - access-control-network
-    labels:
-      # Labels para Traefik (reverse proxy de Eukahack)
-      - "traefik.enable=true"
-      - "traefik.http.routers.access-control.rule=Host(`access-control.eukahack.com`)"
-      - "traefik.http.routers.access-control.entrypoints=websecure"
-      - "traefik.http.routers.access-control.tls=true"
-      - "traefik.http.routers.access-control.tls.certresolver=letsencrypt"
-      - "traefik.http.services.access-control.loadbalancer.server.port=3000"
+      - app-uploads:/app/uploads
+      - app-logs:/app/logs
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.access-control.rule=Host(`access-control.eukahack.com`)"
+        - "traefik.http.routers.access-control.entrypoints=websecure"
+        - "traefik.http.routers.access-control.tls=true"
+        - "traefik.http.routers.access-control.tls.certresolver=letsencrypt"
+        - "traefik.http.services.access-control.loadbalancer.server.port=3000"
 
 volumes:
   mongo-data:
-    driver: local
-
-networks:
-  access-control-network:
-    driver: bridge
-    external: false
+  app-uploads:
+  app-logs:
