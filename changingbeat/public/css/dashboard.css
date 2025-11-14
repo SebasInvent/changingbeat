@@ -1,0 +1,347 @@
+/* Dashboard Custom Styles */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fc;
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.border-left-primary {
+    border-left: 4px solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 4px solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 4px solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 4px solid #f6c23e !important;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+/* Stats Cards */
+.card-body .h5 {
+    margin-bottom: 0;
+}
+
+/* Badges */
+.badge-success-custom {
+    background-color: #1cc88a;
+    color: white;
+    padding: 0.35em 0.65em;
+    border-radius: 0.25rem;
+}
+
+.badge-danger-custom {
+    background-color: #e74a3b;
+    color: white;
+    padding: 0.35em 0.65em;
+    border-radius: 0.25rem;
+}
+
+.badge-warning-custom {
+    background-color: #f6c23e;
+    color: white;
+    padding: 0.35em 0.65em;
+    border-radius: 0.25rem;
+}
+
+.badge-info-custom {
+    background-color: #36b9cc;
+    color: white;
+    padding: 0.35em 0.65em;
+    border-radius: 0.25rem;
+}
+
+/* Terminal Status Cards */
+.terminal-card {
+    border: 2px solid #e3e6f0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.terminal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075) !important;
+}
+
+.terminal-card.online {
+    border-left: 4px solid #1cc88a;
+}
+
+.terminal-card.offline {
+    border-left: 4px solid #e74a3b;
+}
+
+/* Table Styles */
+.table {
+    font-size: 0.9rem;
+}
+
+.table thead th {
+    border-bottom: 2px solid #4e73df;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: #4e73df;
+}
+
+/* Chart Container */
+canvas {
+    max-height: 300px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* Status Indicators */
+.status-dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.status-dot.online {
+    background-color: #1cc88a;
+    box-shadow: 0 0 5px #1cc88a;
+}
+
+.status-dot.offline {
+    background-color: #e74a3b;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card-body .display-4 {
+        font-size: 2rem;
+    }
+    
+    canvas {
+        max-height: 250px;
+    }
+}
+
+/* Loading Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* Temperature Display */
+#avg-temperature {
+    color: #4e73df;
+    font-weight: bold;
+}
+
+#avg-temperature.high {
+    color: #e74a3b;
+}
+
+#avg-temperature.normal {
+    color: #1cc88a;
+}
+
+/* Alert Customization */
+.alert {
+    border-radius: 0.5rem;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+}
+
+footer a {
+    color: #4e73df;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* ===== NOTIFICACIONES EN TIEMPO REAL ===== */
+
+/* Contenedor de notificaciones */
+.notification-toast {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    margin-bottom: 1rem;
+    padding: 1rem;
+    animation: slideInRight 0.3s ease-out;
+    border-left: 4px solid #4e73df;
+}
+
+.notification-toast.success {
+    border-left-color: #1cc88a;
+}
+
+.notification-toast.danger {
+    border-left-color: #e74a3b;
+}
+
+.notification-toast.warning {
+    border-left-color: #f6c23e;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Animación de pulso para badge LIVE */
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+/* Stream de actividad en vivo */
+#live-activity-stream {
+    font-size: 0.9rem;
+}
+
+.activity-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e3e6f0;
+    transition: background-color 0.3s ease;
+    animation: fadeInDown 0.5s ease-out;
+}
+
+.activity-item:hover {
+    background-color: #f1f3f5;
+}
+
+.activity-item.new {
+    background-color: #e7f3ff;
+    animation: highlightFade 3s ease-out;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes highlightFade {
+    0% {
+        background-color: #e7f3ff;
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+/* Indicador de conexión WebSocket */
+#websocket-status .fa-circle {
+    font-size: 0.5rem;
+    vertical-align: middle;
+}
+
+#websocket-status .fa-circle.connected {
+    color: #1cc88a;
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Sonido de notificación (visual) */
+.notification-sound {
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
