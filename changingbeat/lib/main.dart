@@ -6,6 +6,8 @@ import 'core/router/app_router.dart';
 import 'core/widgets/auth_wrapper.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/dashboard/providers/dashboard_provider.dart';
+import 'features/capture/providers/biometric_capture_provider.dart';
+import 'features/records/providers/records_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +33,12 @@ class BiometricVerificationApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => DashboardProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => BiometricCaptureProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RecordsProvider(),
         ),
       ],
       child: AuthWrapper(
