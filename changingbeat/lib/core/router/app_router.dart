@@ -1,4 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../features/onboarding/presentation/screens/splash_screen.dart';
+import '../../features/onboarding/presentation/screens/welcome_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/capture/presentation/screens/capture_screen.dart';
+import '../../features/capture/presentation/screens/document_scan_screen.dart';
+import '../../features/capture/presentation/screens/facial_capture_screen.dart';
+import '../../features/capture/presentation/screens/result_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/records/presentation/screens/records_screen.dart';
 
 /// Rutas de la aplicación
 class AppRoutes {
@@ -20,79 +30,75 @@ class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.splash:
-        // TODO: Importar desde features/onboarding
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // SplashScreen
+          builder: (_) => const SplashScreen(),
           settings: settings,
         );
 
       case AppRoutes.welcome:
-        // TODO: Importar desde features/onboarding
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // WelcomeScreen
+          builder: (_) => const WelcomeScreen(),
           settings: settings,
         );
 
       case AppRoutes.login:
-        // TODO: Importar desde features/auth
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // LoginScreen
+          builder: (_) => const LoginScreen(),
           settings: settings,
         );
 
       case AppRoutes.dashboard:
-        // TODO: Importar desde features/dashboard
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // DashboardScreen
+          builder: (_) => const DashboardScreen(),
           settings: settings,
         );
 
       case AppRoutes.capture:
-        // TODO: Importar desde features/capture
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // CaptureScreen
+          builder: (_) => const CaptureScreen(),
           settings: settings,
         );
 
       case AppRoutes.documentScan:
-        // TODO: Importar desde features/capture
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // DocumentScanScreen
+          builder: (_) => const DocumentScanScreen(),
           settings: settings,
         );
 
       case AppRoutes.facialCapture:
-        // TODO: Importar desde features/capture
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // FacialCaptureScreen
+          builder: (_) => const FacialCaptureScreen(),
           settings: settings,
         );
 
       case AppRoutes.confirmation:
-        // TODO: Importar desde features/capture
+        // TODO: Implementar ConfirmationScreen
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // ConfirmationScreen
+          builder: (_) => const ResultScreen(
+            success: true,
+            message: 'Registro completado',
+          ),
           settings: settings,
         );
 
       case AppRoutes.result:
-        // TODO: Importar desde features/capture
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // ResultScreen
+          builder: (_) => const ResultScreen(
+            success: true,
+            message: 'Operación completada',
+          ),
           settings: settings,
         );
 
       case AppRoutes.settings:
-        // TODO: Importar desde features/settings
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // SettingsScreen
+          builder: (_) => const SettingsScreen(),
           settings: settings,
         );
 
       case AppRoutes.records:
-        // TODO: Importar desde features/records
         return MaterialPageRoute(
-          builder: (_) => const Placeholder(), // RecordsScreen
+          builder: (_) => const RecordsScreen(),
           settings: settings,
         );
 
