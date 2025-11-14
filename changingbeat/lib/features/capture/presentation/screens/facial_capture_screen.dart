@@ -1,41 +1,70 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:camera/camera.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../auth/providers/auth_provider.dart';
+import '../../providers/biometric_capture_provider.dart';
 
-/// Pantalla de captura facial
+/// Pantalla de captura facial con cámara
 class FacialCaptureScreen extends StatefulWidget {
-  const FacialCaptureScreen({super.key});
+  final bool isValidationOnly;
+
+  const FacialCaptureScreen({
+    super.key,
+    this.isValidationOnly = false,
+  });
 
   @override
   State<FacialCaptureScreen> createState() => _FacialCaptureScreenState();
 }
 
 class _FacialCaptureScreenState extends State<FacialCaptureScreen> {
-  bool _isCapturing = false;
-  bool _faceCaptured = false;
-  int _captureCount = 0;
-  final int _requiredCaptures = 3;
+  bool _isProcessing = false;
+  File? _capturedImage;
 
-  Future<void> _captureFace() async {
-    setState(() => _isCapturing = true);
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+
+  Future<void> _initializeCamera() async {
+    final provider = context.read<BiometricCaptureProvider>();
+    await provider.initializeCamera(useFrontCamera: true);
+  }
+
+  Future<void> _capturePhoto() async {
+    final provider = context.read<BiometricCaptureProvider>();
+
+    setState(() => _isProcessing = true);
 
     try {
-      // TODO: Implementar captura facial con cámara y ML Kit
-      await Future.delayed(const Duration(seconds: 2));
+      final image = await provider.captureImage();
 
-      setState(() {
-        _isCapturing = false;
-        _captureCount++;
-        if (_captureCount >= _requiredCaptures) {
-          _faceCaptured = true;
+      if (image != null) {
+        setState(() {
+          _capturedImage = image;
+          _isProcessing = false;
+        });
+      } else {
+        setState(() => _isProcessing = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al capturar imagen'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
         }
-      });
+      }
     } catch (e) {
-      setState(() => _isCapturing = false);
+      setState(() => _isProcessing = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al capturar rostro: $e'),
+            content: Text('Error: $e'),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -43,187 +72,227 @@ class _FacialCaptureScreenState extends State<FacialCaptureScreen> {
     }
   }
 
-  void _continueToConfirmation() {
-    Navigator.of(context).pushReplacementNamed(AppRoutes.confirmation);
+  Future<void> _retryCapture() async {
+    setState(() => _capturedImage = null);
+    await _initializeCamera();
+  }
+
+  Future<void> _continueWithCapture() async {
+    if (_capturedImage == null) return;
+
+    final provider = context.read<BiometricCaptureProvider>();
+    provider.setFaceImage(_capturedImage!);
+
+    if (widget.isValidationOnly) {
+      // Validar biométrico
+      await _validateBiometric();
+    } else {
+      // Continuar a confirmación para registro completo
+      if (mounted) {
+        Navigator.of(context).pushNamed(
+          AppRoutes.result,
+          arguments: {
+            'success': true,
+            'message': 'Captura facial completada',
+            'details': 'Procesando registro biométrico...',
+          },
+        );
+
+        // Registrar en background
+        _registerBiometric();
+      }
+    }
+  }
+
+  Future<void> _validateBiometric() async {
+    final provider = context.read<BiometricCaptureProvider>();
+    final authProvider = context.read<AuthProvider>();
+
+    setState(() => _isProcessing = true);
+
+    final result = await provider.validateBiometric(
+      tabletId: 'TAB-001', // TODO: Obtener de configuración
+    );
+
+    setState(() => _isProcessing = false);
+
+    if (!mounted) return;
+
+    if (result != null && result.success) {
+      Navigator.of(context).pushReplacementNamed(
+        AppRoutes.result,
+        arguments: {
+          'success': result.isMatch,
+          'message': result.isMatch
+              ? '¡Identidad Verificada!'
+              : 'No se encontró coincidencia',
+          'details': result.isMatch
+              ? 'Persona: ${result.matchedRecord?.fullName}\nScore: ${result.matchScore?.toStringAsFixed(2)}'
+              : 'No se encontró ninguna coincidencia en la base de datos',
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(provider.errorMessage ?? 'Error al validar'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    }
+  }
+
+  Future<void> _registerBiometric() async {
+    final provider = context.read<BiometricCaptureProvider>();
+    final authProvider = context.read<AuthProvider>();
+
+    final result = await provider.registerBiometric(
+      tabletId: 'TAB-001', // TODO: Obtener de configuración
+      operatorId: authProvider.currentUser?.id ?? 'unknown',
+    );
+
+    if (result != null) {
+      debugPrint('Registro exitoso: ${result.id}');
+    } else {
+      debugPrint('Error en registro: ${provider.errorMessage}');
+    }
+  }
+
+  @override
+  void dispose() {
+    context.read<BiometricCaptureProvider>().disposeCamera();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Captura Facial'),
+        title: Text(
+            widget.isValidationOnly ? 'Verificación Facial' : 'Captura Facial'),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Instrucciones
-              Card(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                child: Padding(
+      body: Consumer<BiometricCaptureProvider>(
+        builder: (context, provider, child) {
+          return SafeArea(
+            child: Column(
+              children: [
+                // Instrucciones
+                Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
-                            color: AppTheme.primaryColor,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Mire directamente a la cámara',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
-                        ],
+                      const Icon(Icons.info_outline,
+                          color: AppTheme.primaryColor),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _capturedImage == null
+                              ? 'Posicione su rostro en el centro del marco'
+                              : 'Revise la imagen capturada',
+                          style: const TextStyle(color: AppTheme.primaryColor),
+                        ),
                       ),
-                      if (!_faceCaptured) ...[
-                        const SizedBox(height: 8),
-                        LinearProgressIndicator(
-                          value: _captureCount / _requiredCaptures,
-                          backgroundColor: Colors.grey[300],
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppTheme.accentColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Capturas: $_captureCount/$_requiredCaptures',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
                     ],
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 24),
-
-              // Área de captura
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black12,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: _faceCaptured
-                          ? AppTheme.accentColor
-                          : AppTheme.primaryColor,
-                      width: 3,
-                    ),
-                  ),
-                  child: Center(
-                    child: _buildCaptureContent(),
+                // Vista previa de la cámara o imagen capturada
+                Expanded(
+                  child: Container(
+                    color: Colors.black,
+                    child: _capturedImage != null
+                        ? Image.file(
+                            _capturedImage!,
+                            fit: BoxFit.contain,
+                          )
+                        : provider.isCameraInitialized &&
+                                provider.cameraController != null
+                            ? CameraPreview(provider.cameraController!)
+                            : const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 24),
-
-              // Botones de acción
-              if (!_faceCaptured)
-                ElevatedButton.icon(
-                  onPressed: _isCapturing ? null : _captureFace,
-                  icon: _isCapturing
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
+                // Botones de acción
+                Container(
+                  padding: const EdgeInsets.all(24.0),
+                  child: _capturedImage == null
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed:
+                                  _isProcessing || !provider.isCameraInitialized
+                                      ? null
+                                      : _capturePhoto,
+                              icon: _isProcessing
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : const Icon(Icons.camera_alt, size: 28),
+                              label: Text(_isProcessing
+                                  ? 'Capturando...'
+                                  : 'Capturar Foto'),
+                              style: ElevatedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+                          ],
                         )
-                      : const Icon(Icons.camera_alt),
-                  label:
-                      Text(_isCapturing ? 'Capturando...' : 'Capturar Rostro'),
-                )
-              else
-                Column(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _continueToConfirmation,
-                      icon: const Icon(Icons.arrow_forward),
-                      label: const Text('Continuar a Confirmación'),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _faceCaptured = false;
-                          _captureCount = 0;
-                        });
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Capturar Nuevamente'),
-                    ),
-                  ],
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed:
+                                  _isProcessing ? null : _continueWithCapture,
+                              icon: _isProcessing
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : const Icon(Icons.check_circle),
+                              label: Text(_isProcessing
+                                  ? 'Procesando...'
+                                  : widget.isValidationOnly
+                                      ? 'Validar'
+                                      : 'Continuar'),
+                              style: ElevatedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: _isProcessing ? null : _retryCapture,
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Tomar Otra Foto'),
+                            ),
+                          ],
+                        ),
                 ),
-            ],
-          ),
-        ),
+              ],
+            ),
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildCaptureContent() {
-    if (_isCapturing) {
-      return const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text('Analizando rostro...'),
-        ],
-      );
-    }
-
-    if (_faceCaptured) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.check_circle,
-            size: 80,
-            color: AppTheme.accentColor,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Captura facial completada',
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Todas las capturas realizadas correctamente',
-            style: Theme.of(context).textTheme.bodySmall,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(
-          Icons.face,
-          size: 80,
-          color: AppTheme.primaryColor,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          _captureCount == 0
-              ? 'Presione el botón para iniciar'
-              : 'Captura $_captureCount de $_requiredCaptures completada',
-          style: Theme.of(context).textTheme.titleMedium,
-          textAlign: TextAlign.center,
-        ),
-      ],
     );
   }
 }
