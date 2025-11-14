@@ -71,7 +71,6 @@ services:
       - "traefik.http.routers.access-control.tls=true"
       - "traefik.http.routers.access-control.tls.certresolver=letsencrypt"
       - "traefik.http.services.access-control.loadbalancer.server.port=3000"
-      - "traefik.docker.network=access-control-network"
 
 volumes:
   mongo-data:
