@@ -16,7 +16,7 @@ services:
 
   # Servidor Node.js
   app:
-    image: ${DOCKER_REGISTRY:-ghcr.io/sebasinvent}/changingbeat:latest
+    image: ${DOCKER_REGISTRY:-ghcr.io/sebasinvent}/changingbeat:v1.0.1
     environment:
       NODE_ENV: production
       PORT: 3000
