@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Tablets - Sistema Biométrico</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .stat-card h3 {
+            font-size: 0.875rem;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .stat-card .change {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .positive { color: #48bb78; }
+        .negative { color: #f56565; }
+
+        .tablets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .tablet-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .tablet-card:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .tablet-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tablet-header h3 {
+            font-size: 1.25rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-online {
+            background: #48bb78;
+            color: white;
+        }
+
+        .status-offline {
+            background: #cbd5e0;
+            color: #4a5568;
+        }
+
+        .tablet-body {
+            padding: 1.5rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #718096;
+            font-size: 0.875rem;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .tablet-actions {
+            padding: 1rem 1.5rem;
+            background: #f7fafc;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #718096;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>📱 Dashboard de Tablets</h1>
+            <p>Gestión centralizada de dispositivos Android</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Estadísticas Globales -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3>Total Tablets</h3>
+                <div class="value" id="totalTablets">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Online</h3>
+                <div class="value positive" id="onlineTablets">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Registros Totales</h3>
+                <div class="value" id="totalRegistrations">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Tasa de Éxito</h3>
+                <div class="value" id="successRate">-</div>
+            </div>
+        </div>
+
+        <!-- Grid de Tablets -->
+        <div id="tabletsContainer">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Cargando tablets...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Configuración -->
+    <div class="modal" id="configModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Configuración de Tablet</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="configForm">
+                <input type="hidden" id="modalTabletId">
+                
+                <div class="form-group">
+                    <label>Modo de Operación</label>
+                    <select id="operationMode">
+                        <option value="BOTH">Registro y Verificación</option>
+                        <option value="REGISTRATION">Solo Registro</option>
+                        <option value="VERIFICATION">Solo Verificación</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enableFacial"> Validación Facial
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enableFingerprint"> Validación de Huella
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enableDocument"> Validación de Documento
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>Tema</label>
+                    <select id="theme">
+                        <option value="light">Claro</option>
+                        <option value="dark">Oscuro</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    Guardar Configuración
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Botón de Refresh -->
+    <button class="refresh-btn" onclick="loadData()" title="Actualizar">
+        🔄
+    </button>
+
+    <script>
+        const API_BASE = '/api/v1';
+        let refreshInterval;
+
+        // Cargar datos iniciales
+        loadData();
+
+        // Auto-refresh cada 10 segundos
+        refreshInterval = setInterval(loadData, 10000);
+
+        async function loadData() {
+            try {
+                await Promise.all([
+                    loadGlobalStats(),
+                    loadTablets()
+                ]);
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+            }
+        }
+
+        async function loadGlobalStats() {
+            const response = await fetch(`${API_BASE}/tablets/stats/global`);
+            const result = await response.json();
+            
+            if (result.success) {
+                const stats = result.data;
+                document.getElementById('totalTablets').textContent = stats.totalTablets || 0;
+                document.getElementById('onlineTablets').textContent = stats.onlineTablets || 0;
+                document.getElementById('totalRegistrations').textContent = stats.totalRegistrations || 0;
+                
+                const total = stats.successfulValidations + stats.failedValidations;
+                const successRate = total > 0 ? ((stats.successfulValidations / total) * 100).toFixed(1) : 0;
+                document.getElementById('successRate').textContent = successRate + '%';
+            }
+        }
+
+        async function loadTablets() {
+            const response = await fetch(`${API_BASE}/tablets`);
+            const result = await response.json();
+            
+            if (result.success) {
+                renderTablets(result.data);
+            }
+        }
+
+        function renderTablets(tablets) {
+            const container = document.getElementById('tabletsContainer');
+            
+            if (tablets.length === 0) {
+                container.innerHTML = '<div class="loading"><p>No hay tablets registradas</p></div>';
+                return;
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'tablets-grid';
+
+            tablets.forEach(tablet => {
+                const card = createTabletCard(tablet);
+                grid.appendChild(card);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(grid);
+        }
+
+        function createTabletCard(tablet) {
+            const card = document.createElement('div');
+            card.className = 'tablet-card';
+
+            const isOnline = tablet.connectionStatus.isOnline;
+            const statusClass = isOnline ? 'status-online' : 'status-offline';
+            const statusText = isOnline ? 'Online' : 'Offline';
+
+            const successRate = tablet.statistics.successfulValidations + tablet.statistics.failedValidations > 0
+                ? ((tablet.statistics.successfulValidations / (tablet.statistics.successfulValidations + tablet.statistics.failedValidations)) * 100).toFixed(1)
+                : 0;
+
+            card.innerHTML = `
+                <div class="tablet-header">
+                    <h3>${tablet.name}</h3>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                <div class="tablet-body">
+                    <div class="info-row">
+                        <span class="info-label">ID</span>
+                        <span class="info-value">${tablet.tabletId}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ubicación</span>
+                        <span class="info-value">${tablet.location?.name || 'No especificada'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Dispositivo</span>
+                        <span class="info-value">${tablet.deviceInfo?.model || 'Desconocido'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Registros</span>
+                        <span class="info-value">${tablet.statistics.totalRegistrations}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tasa de Éxito</span>
+                        <span class="info-value">${successRate}%</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Batería</span>
+                        <span class="info-value">${tablet.hardware?.battery?.level || 0}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${tablet.hardware?.battery?.level || 0}%"></div>
+                    </div>
+                </div>
+                <div class="tablet-actions">
+                    <button class="btn btn-primary" onclick="openConfig('${tablet.tabletId}')">
+                        ⚙️ Configurar
+                    </button>
+                    <button class="btn btn-secondary" onclick="viewDetails('${tablet.tabletId}')">
+                        📊 Detalles
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function openConfig(tabletId) {
+            document.getElementById('modalTabletId').value = tabletId;
+            document.getElementById('configModal').classList.add('active');
+            
+            // Cargar configuración actual
+            loadTabletConfig(tabletId);
+        }
+
+        async function loadTabletConfig(tabletId) {
+            const response = await fetch(`${API_BASE}/tablets/${tabletId}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                const config = result.data.configuration;
+                document.getElementById('operationMode').value = config.operationMode || 'BOTH';
+                document.getElementById('enableFacial').checked = config.enabledValidations?.facial !== false;
+                document.getElementById('enableFingerprint').checked = config.enabledValidations?.fingerprint || false;
+                document.getElementById('enableDocument').checked = config.enabledValidations?.document !== false;
+                document.getElementById('theme').value = config.ui?.theme || 'light';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('configModal').classList.remove('active');
+        }
+
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const tabletId = document.getElementById('modalTabletId').value;
+            const config = {
+                operationMode: document.getElementById('operationMode').value,
+                enabledValidations: {
+                    facial: document.getElementById('enableFacial').checked,
+                    fingerprint: document.getElementById('enableFingerprint').checked,
+                    document: document.getElementById('enableDocument').checked
+                },
+                ui: {
+                    theme: document.getElementById('theme').value
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/tablets/${tabletId}/configuration`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Configuración actualizada');
+                    closeModal();
+                    loadData();
+                } else {
+                    alert('❌ Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ Error al guardar configuración');
+                console.error(error);
+            }
+        });
+
+        function viewDetails(tabletId) {
+            window.location.href = `/admin-tablet-detail.html?id=${tabletId}`;
+        }
+
+        // Cerrar modal al hacer click fuera
+        document.getElementById('configModal').addEventListener('click', (e) => {
+            if (e.target.id === 'configModal') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Control de Acceso Biométrico</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <!-- Socket.io Client -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-fingerprint me-2"></i>
+                Sistema de Control de Acceso
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">
+                            <i class="fas fa-chart-line me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api-docs" target="_blank">
+                            <i class="fas fa-book me-1"></i>API Docs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api/v1/health" target="_blank">
+                            <i class="fas fa-heartbeat me-1"></i>Health
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor de Notificaciones -->
+    <div id="notifications-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999; max-width: 350px;"></div>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <!-- Status Bar -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info d-flex align-items-center" role="alert">
+                    <i class="fas fa-wifi me-2"></i>
+                    <div>
+                        <strong>Estado del Sistema:</strong> 
+                        <span id="system-status" class="badge bg-warning">Conectando...</span>
+                        <span class="ms-3" id="websocket-status">
+                            <i class="fas fa-circle text-warning"></i>
+                            <span id="ws-status-text">Conectando WebSocket...</span>
+                        </span>
+                        <span class="ms-3">
+                            <i class="far fa-clock me-1"></i>
+                            Última actualización: <span id="last-update">--</span>
+                        </span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary ms-auto" onclick="refreshAll()">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Activity Stream -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white py-2 d-flex align-items-center">
+                        <h6 class="m-0">
+                            <i class="fas fa-broadcast-tower me-2"></i>
+                            <span class="badge bg-danger pulse-animation">LIVE</span>
+                            Actividad en Tiempo Real
+                        </h6>
+                        <span class="ms-auto" id="live-counter">0 eventos</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="live-activity-stream" style="max-height: 200px; overflow-y: auto; background: #f8f9fc;">
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-satellite-dish fa-2x mb-2"></i>
+                                <p>Esperando eventos en tiempo real...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <!-- Total de Usuarios -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Total Usuarios
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-users">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-users fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registros Hoy -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Registros Hoy
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="today-records">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminales Online -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    Terminales Online
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="terminals-online">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-desktop fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accesos Denegados Hoy -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Denegados Hoy
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="denied-today">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-ban fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="row mb-4">
+            <!-- Registros por Tipo -->
+            <div class="col-xl-6 col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-chart-pie me-2"></i>Registros por Tipo (Hoy)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="recordTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actividad por Hora -->
+            <div class="col-xl-6 col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-chart-bar me-2"></i>Actividad por Hora
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="hourlyActivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="row mb-4">
+            <!-- Temperatura Promedio -->
+            <div class="col-xl-6 col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-thermometer-half me-2"></i>Temperatura Promedio
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <div class="display-4 mb-3" id="avg-temperature">
+                                <div class="spinner-border" role="status"></div>
+                            </div>
+                            <div class="text-muted">
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                                Alertas de temperatura alta: <strong id="high-temp-count">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Terminales -->
+            <div class="col-xl-6 col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-trophy me-2"></i>Terminales Más Activos
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="topTerminalsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Records Table -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-list me-2"></i>Registros Recientes
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="recent-records-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha/Hora</th>
+                                        <th>Usuario</th>
+                                        <th>Terminal</th>
+                                        <th>Tipo</th>
+                                        <th>Temperatura</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-records-body">
+                                    <tr>
+                                        <td colspan="6" class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-desktop me-2"></i>Estado de Terminales
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="terminals-status" class="row">
+                            <div class="col-12 text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light text-center text-muted py-3 mt-5">
+        <div class="container">
+            <small>
+                Sistema de Control de Acceso Biométrico v2.0 | 
+                <a href="/api-docs" target="_blank">API Docs</a> | 
+                <a href="https://github.com" target="_blank">GitHub</a>
+            </small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- WebSocket Client -->
+    <script src="/js/websocket-client.js"></script>
+    <!-- Custom JS -->
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

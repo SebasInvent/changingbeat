@@ -1,12 +1,16 @@
 # Dependencies
+node_modules/
 /node_modules
 /changingbeat/node_modules
 
 # Environment variables
 .env
 *.env
+.env.local
+.env.*.local
 
 # Logs
+logs/
 logs
 *.log
 npm-debug.log*
@@ -16,6 +20,8 @@ yarn-error.log*
 # Production
 /build
 /dist
+dist/
+build/
 
 # IDEs and editors
 .vscode/
@@ -25,6 +31,8 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
 
 # OS generated files
 .DS_Store
@@ -34,3 +42,34 @@ yarn-error.log*
 .Trashes
 Thumbs.db
 ehthumbs.db
+
+# Base de datos
+DataBase/
+*.mdf
+*.ldf
+*.MDF
+*.LDF
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de configuración local
+config.local.js
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Archivos sensibles
+*.key
+*.pem
+*.cert
+
+# Archivos antiguos
+old/
+*.old
+*.backup
+
+# Reportes temporales
+network-diagnosis-report.txt
